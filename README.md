@@ -13,3 +13,7 @@ Alternatively, you can access the NYC Taxi & Limousine Commission (TLC) trip rec
 
 - Apache Spark
 - Scala
+
+## Data Dictionary Reference
+NYC Taxi & Limousine Commission. (n.d.). Data Dictionary - Trip Records - Yellow Taxi. 
+Retrieved May 9, 2023, from https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
