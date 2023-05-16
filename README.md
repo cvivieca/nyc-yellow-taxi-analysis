@@ -57,15 +57,15 @@ val columnRenameMapping = Map(
 
 val convertedDfMap = parquetFiles.par.map { row =>  
 	val filePath = row.getString(0)  
-	  
+		
 	val df = spark.read.parquet(filePath) 
-	 
+		
 	val convertedData = df  
 		.transform(convertAndMapColumns)  
 		.transform(renameColumnsMaps)  
-	  
+		
 	val fileName = filePath.split("_").last  
-	  
+		
 	val modifiedFileName = fileName.replace(".parquet", "")  
 
 	modifiedFileName -> convertedData  
@@ -202,10 +202,10 @@ def filterRealisticTripsByDistance(dataframe: DataFrame): DataFrame = {
 	// Get trips that are between the ranges expression  
 	val tripDistanceColumn = col("trip_distance")  
 	val minAndMaxDistanceExp = tripDistanceColumn >= AppConstants.MIN_TRIP_DISTANCE and tripDistanceColumn <= AppConstants.MAX_TRIP_DISTANCE  
-	  
+		
 	// Get trips filter by the expressions  
 	val realisticTripsDf = dataframe.filter(minAndMaxDistanceExp)  
-	  
+		
 	realisticTripsDf  
 }
 ```
@@ -235,12 +235,12 @@ def filterTripsWithPassengers(dataframe: DataFrame): DataFrame = {
 	val passengerCountColumn = col("passenger_count")  
 	val maxPassengerCountAllowedExp = passengerCountColumn < AppConstants.MAX_PASSENGER_COUNT_ALLOWED  
 	val atLeastOnePassengerExp = passengerCountColumn > 0  
-	  
+		
 	val passengerCountFilterExp = maxPassengerCountAllowedExp and atLeastOnePassengerExp  
-	  
+		
 	// Get trips filter by the expressions  
 	val filterTripsWithPassengersDf = dataframe.filter(passengerCountFilterExp)  
-	  
+		
 	filterTripsWithPassengersDf  
 }
 ```
@@ -263,7 +263,7 @@ def replaceNullsWithDefaults(dataframe: DataFrame): DataFrame = {
 	"airport_fee" -> 0.0,  
 	"payment_type" -> PaymentTypes.UNKNOWN  
 	))  
-	  
+		
 	replacedValuesDf  
 }
 ```
