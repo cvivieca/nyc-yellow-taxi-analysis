@@ -202,10 +202,10 @@ def filterRealisticTripsByDistance(dataframe: DataFrame): DataFrame = {
 	// Get trips that are between the ranges expression  
 	val tripDistanceColumn = col("trip_distance")  
 	val minAndMaxDistanceExp = tripDistanceColumn >= AppConstants.MIN_TRIP_DISTANCE and tripDistanceColumn <= AppConstants.MAX_TRIP_DISTANCE  
-		
+
 	// Get trips filter by the expressions  
 	val realisticTripsDf = dataframe.filter(minAndMaxDistanceExp)  
-		
+
 	realisticTripsDf  
 }
 ```
@@ -235,12 +235,12 @@ def filterTripsWithPassengers(dataframe: DataFrame): DataFrame = {
 	val passengerCountColumn = col("passenger_count")  
 	val maxPassengerCountAllowedExp = passengerCountColumn < AppConstants.MAX_PASSENGER_COUNT_ALLOWED  
 	val atLeastOnePassengerExp = passengerCountColumn > 0  
-		
+
 	val passengerCountFilterExp = maxPassengerCountAllowedExp and atLeastOnePassengerExp  
-		
+
 	// Get trips filter by the expressions  
 	val filterTripsWithPassengersDf = dataframe.filter(passengerCountFilterExp)  
-		
+
 	filterTripsWithPassengersDf  
 }
 ```
@@ -259,11 +259,11 @@ To handle this, the following function is implemented to replace null values wit
 */  
 def replaceNullsWithDefaults(dataframe: DataFrame): DataFrame = {  
 	val replacedValuesDf = dataframe.na.fill(Map(  
-	"congestion_surcharge" -> 0.0,  
-	"airport_fee" -> 0.0,  
-	"payment_type" -> PaymentTypes.UNKNOWN  
+		"congestion_surcharge" -> 0.0,  
+		"airport_fee" -> 0.0,  
+		"payment_type" -> PaymentTypes.UNKNOWN  
 	))  
-		
+
 	replacedValuesDf  
 }
 ```
