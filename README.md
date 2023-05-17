@@ -77,7 +77,7 @@ val convertedDfMap = parquetFiles.par.map { row =>
 Run this spark job before against your downloaded dataframe. If just one Parquet file was downloaded this step is not needed because one parquet file have a schema defined, this will fix schema mismatch between multiptle files. 
 
 ```shell
-spark-submit --class com.jobs.TLCAnalysisApp --master local[*] TLCAnalysisApp.jar SchemaFixerJob input_data_path output_date_path
+spark-submit --class com.jobs.TLCAnalysisApp --master local[*] nyc-yellow-taxi-analysis.jar jobName=schema_fixer inputPath=$INPUT_PATH outputPath=$OUTPUT_PATH
 ```
 
 > Note: Using `option("mergeSchema", "true")` will not resolve the issue as the types vary between INT64 and DOUBLE, which would lead to a conversion error.
