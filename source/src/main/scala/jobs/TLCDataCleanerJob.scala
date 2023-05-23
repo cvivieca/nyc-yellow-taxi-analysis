@@ -1,9 +1,11 @@
 package jobs
 
+import consts.ArgumentsName.{INPUT_PATH, OUTPUT_PATH}
 import consts.{ArgumentsName, Formats}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import utils.SchemaDefinitions
 import tranformations.DataCleanerTransf._
+import tranformations.DataProcessorTransf._
 
 import java.nio.file.{Files, Paths}
 
@@ -15,8 +17,8 @@ object TLCDataCleanerJob {
    * @param args A map of arguments containing inputPath and outputPath.
    */
   def run(spark: SparkSession, args: Map[String, String]): Unit = {
-    val inputPath: String = args.getOrElse(ArgumentsName.INPUT_PATH, "")
-    val outputPath: String = args.getOrElse(ArgumentsName.OUTPUT_PATH, "")
+    val inputPath: String = args.getOrElse(INPUT_PATH, "")
+    val outputPath: String = args.getOrElse(OUTPUT_PATH, "")
 
     // Check if path exists
     if (!Files.exists(Paths.get(inputPath))) {
@@ -34,11 +36,18 @@ object TLCDataCleanerJob {
       .option("dateFormat", Formats.ORIGINAL_TLC_DATE_FORMAT)
       .parquet(inputPath)
 
+    // Enhance the data with new columns
+    val processedDataframe = tripDataDf
+      .transform(addDurationColumn)
+      .transform(addIsWeekendColumn)
+      .transform(addDateColumns)
+
     // Clean dataframe and get a new one with better data
-    val cleanDataframe = tripDataDf
+    val cleanDataframe = processedDataframe
       .transform(replaceNullsWithDefaults)
       .transform(filterRealisticTripsByDistance)
       .transform(filterTripsWithPassengers)
+      .transform(removeTripsInDifferentDays)
 
     saveCleanDataframe(cleanDataframe, outputPath)
   }

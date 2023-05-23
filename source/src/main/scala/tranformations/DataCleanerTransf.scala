@@ -2,7 +2,8 @@ package tranformations
 
 import consts.{AppConstants, PaymentTypes}
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.functions.{col, datediff, round}
+import utils.DateUtils._
 
 object DataCleanerTransf {
   /**
@@ -56,5 +57,22 @@ object DataCleanerTransf {
     val filterTripsWithPassengersDf = dataframe.filter(passengerCountFilterExp)
 
     filterTripsWithPassengersDf
+  }
+
+  /**
+   * Removes trips from the DataFrame that are in multiple days based on the pickup and dropoff timestamps.
+   *
+   * @param dataFrame The input DataFrame containing trip data.
+   * @return A new DataFrame with trips that are within the same day.
+   */
+  def removeTripsInDifferentDays(dataFrame: DataFrame): DataFrame = {
+    val pickupDateColumn = col("tpep_pickup_datetime")
+    val dropOffDateColumn = col("tpep_dropoff_datetime")
+
+    val daysDiff = getDiffBetweenDates(dropOffDateColumn, pickupDateColumn) / (24 * 60 * 60)
+
+    val tripsWithSameDayDf = dataFrame.filter(round(daysDiff) <= AppConstants.TRIPS_MAX_DAYS_DIFF)
+
+    tripsWithSameDayDf
   }
 }

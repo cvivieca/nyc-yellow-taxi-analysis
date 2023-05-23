@@ -1,11 +1,7 @@
 package jobs
 
-import consts.{ArgumentsName, Formats, Jobs}
-import org.apache.spark.sql.SparkSession
-import tranformations.DataCleanerTransf
+import consts.{ArgumentsName, Jobs}
 import utils._
-
-import java.nio.file.{Files, Paths}
 
 object TLCAnalysisApp {
   def main(args: Array[String]): Unit = {

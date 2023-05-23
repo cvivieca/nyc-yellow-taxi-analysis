@@ -1,6 +1,3 @@
-
-
-
 # NYC Yellow Taxi Analysis
 
 This project analyzes NYC yellow taxi trip data using Apache Spark and Scala.
@@ -147,12 +144,12 @@ val tripDataSchema = StructType(Array(
 NYC Taxi & Limousine Commission. (n.d.). Data Dictionary - Trip Records - Yellow Taxi.
 Retrieved May 9, 2023, from https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
 
-# Data cleansing and outliners detection 
+# Outliners detection and Data cleansing  
 
 ## 1. Remove inconsistent trips
 Upon reviewing the DataFrame, several rows appear to have irregular values. 
 
-#### 1.1 Out of range trips
+#### 1.1 Filtering trips based on the trip distance
 The columns `pickup_location_id` and `dropoff_location_id` represent the boroughs where the passengers were picked up (PU) and dropped off (DO). In the table below, the first row displays a `trip_distance` of `389678.46` miles, but the pickup and drop-off locations are the same or near one to the other. 
 
 It is highly unlikely to have such trips within the same city, as they would require several days to complete.
@@ -210,7 +207,7 @@ def filterRealisticTripsByDistance(dataframe: DataFrame): DataFrame = {
 }
 ```
 
-#### 1.2 Out of range passenger count
+#### 1.2 Filtering trips with at least a passenger
 
 In compliance with regulations, taxi cabs are restricted to carrying a maximum of 5 passengers. To adhere to this rule, I filtered out trips with more than 5 passengers or less than 1 passenger.
 
@@ -245,6 +242,37 @@ def filterTripsWithPassengers(dataframe: DataFrame): DataFrame = {
 }
 ```
 
+#### 1.3 Filtering trips in the same date
+Some trips have a difference in days greater than 1 day, which is inconsistent considering the pickup and drop-off times as well as the trip distances. 
+
+```
++--------------------+---------------------+-------------+--------+
+|tpep_pickup_datetime|tpep_dropoff_datetime|trip_distance|datediff|
++--------------------+---------------------+-------------+--------+
+| 2018-11-08 12:15:30|  2018-11-10 16:35:16|          9.5|       2|
+| 2018-11-09 03:06:08|  2018-11-29 03:43:06|          3.0|      20|
+| 2018-11-21 18:32:17|  2018-11-25 06:55:28|          2.2|       4|
+| 2018-12-07 06:00:37|  2018-12-10 11:01:08|         1.38|       3|
+| 2018-12-24 09:15:20|  2018-12-29 17:55:41|         0.16|       5|
++--------------------+---------------------+-------------+--------+
+only showing top 5 rows
+```
+To address this issue, I filter out trips that do not occur on the same date.
+
+```scala
+def removeTripsInDifferentDays(dataFrame: DataFrame): DataFrame = {  
+	val pickupDateColumn = col("tpep_pickup_datetime")  
+	val dropOffDateColumn = col("tpep_dropoff_datetime")  
+	  
+	val daysDiff = getDiffBetweenDates(dropOffDateColumn, pickupDateColumn) / (24 * 60 * 60)  
+	  
+	val tripsWithSameDayDf = dataFrame.filter(round(daysDiff) <= AppConstants.TRIPS_MAX_DAYS_DIFF)  
+	  
+	tripsWithSameDayDf  
+}
+```
+
+
 ## 2. Set default values
 In certain columns, null values exist for numerical data. For instance, to address null values in the `payment_type` column, I will assign the default value "unknown" instead.
 
@@ -267,3 +295,5 @@ def replaceNullsWithDefaults(dataframe: DataFrame): DataFrame = {
 	replacedValuesDf  
 }
 ```
+
+## Exploratory Data Analysis (EDA)
