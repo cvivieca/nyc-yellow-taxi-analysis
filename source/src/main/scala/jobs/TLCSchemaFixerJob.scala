@@ -1,6 +1,5 @@
 package jobs
 
-import consts.ArgumentsName
 import consts.ArgumentsName.{INPUT_PATH, OUTPUT_PATH}
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.input_file_name

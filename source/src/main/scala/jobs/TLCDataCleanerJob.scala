@@ -1,11 +1,13 @@
 package jobs
 
 import consts.ArgumentsName.{INPUT_PATH, OUTPUT_PATH}
-import consts.{ArgumentsName, Formats}
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import consts.Formats
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.col
 import utils.SchemaDefinitions
+import utils.WriteUtils.saveDataframe
 import tranformations.DataCleanerTransf._
-import tranformations.DataProcessorTransf._
+import tranformations.DataPreProcessingTransf._
 
 import java.nio.file.{Files, Paths}
 
@@ -49,12 +51,6 @@ object TLCDataCleanerJob {
       .transform(filterTripsWithPassengers)
       .transform(removeTripsInDifferentDays)
 
-    saveCleanDataframe(cleanDataframe, outputPath)
-  }
-
-  private def saveCleanDataframe(dataFrame: DataFrame, outputPath: String): Unit = {
-    dataFrame.write
-      .mode(SaveMode.Overwrite)
-      .parquet(outputPath + "/" + "")
+    saveDataframe(cleanDataframe, outputPath)
   }
 }

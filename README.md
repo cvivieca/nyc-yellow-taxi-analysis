@@ -15,14 +15,26 @@ Alternatively, you can access the NYC Taxi & Limousine Commission (TLC) trip rec
 
 
 ## General Description
-The dataset covers the period from 2017 to 2022 and contains:
+The TLC Trip Data is a dataset that contains New York City taxi trip information captured by authorized vendors and published by the NYC TLC.
+
+The dataset used in this project covers the period from 2017 to 2022 and contains:
 
 ### Dataset Details:
 - Number of rows: 396,179,656
 - Number of columns: 19
 - Size of data: 5.79 GB.
 
-## Resolving Schema Mismatch Issue Prior to Processing
+> This values might vary cause the data can be corrected or new data could be added. 
+
+### Grain
+
+The dataset contains trips recorded by each taxi and sent to a server through one of the TPEP providers (Creative Mobile Technologies or VeriFone Inc). The data is not aggregated or modified.
+
+Based on this information, The granularity of this dataset can be defined as:
+
+ - One row per taxi trip
+
+## Fixing Schema Mismatch Issue Prior to Processing
 After downloading the data, I discovered that the Parquet metadata differs among the Parquet files. For instance, some files have the `passenger_count` or `congestion_surcharge` stored as a `DOUBLE` type, while others use `INT64`.
 
 To address this inconsistency, a job has been implemented to reconcile the schemas across the Parquet files. You can find the implementation of this job under the directory `source/src/main/scala/jobs`.
@@ -71,7 +83,7 @@ val convertedDfMap = parquetFiles.par.map { row =>
 // yes, more code ...
 ```
 
-Run this spark job before against your downloaded dataframe. If just one Parquet file was downloaded this step is not needed because one parquet file have a schema defined, this will fix schema mismatch between multiptle files. 
+Run this spark job before against your downloaded dataframe. If just one Parquet file was downloaded this step is not needed because one parquet file have a schema defined, this will fix schema mismatch between multiple files. 
 
 ```shell
 spark-submit --class com.jobs.TLCAnalysisApp --master local[*] nyc-yellow-taxi-analysis.jar jobName=schema_fixer inputPath=$INPUT_PATH outputPath=$OUTPUT_PATH
@@ -141,15 +153,21 @@ val tripDataSchema = StructType(Array(
 | airport_fee           | $1.25 for pick up only at LaGuardia and John F. Kennedy Airports.                                                                           |
 
 ### Field description reference
-NYC Taxi & Limousine Commission. (n.d.). Data Dictionary - Trip Records - Yellow Taxi.
-Retrieved May 9, 2023, from https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
+> NYC Taxi & Limousine Commission - [Data Dictionary - Trip Records - Yellow Taxi ](https://www.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf)
 
-# Outliners detection and Data cleansing  
+# Preprocessing
+## Outliners detection and Data cleansing  
 
-## 1. Remove inconsistent trips
+### Running the cleaning and preprocessing job
+```shell
+spark-submit --class com.jobs.TLCAnalysisApp --master local[*] nyc-yellow-taxi-analysis.jar jobName=data_cleaner_processor inputPath=$INPUT_PATH outputPath=$OUTPUT_PATH
+```
+> Note: The ***input path*** should be the ***output path*** of the **schema_fixer** job. 
+
+#### 1. Remove inconsistent trips
 Upon reviewing the DataFrame, several rows appear to have irregular values. 
 
-#### 1.1 Filtering trips based on the trip distance
+##### 1.1 Filtering trips based on the trip distance
 The columns `pickup_location_id` and `dropoff_location_id` represent the boroughs where the passengers were picked up (PU) and dropped off (DO). In the table below, the first row displays a `trip_distance` of `389678.46` miles, but the pickup and drop-off locations are the same or near one to the other. 
 
 It is highly unlikely to have such trips within the same city, as they would require several days to complete.
@@ -207,7 +225,7 @@ def filterRealisticTripsByDistance(dataframe: DataFrame): DataFrame = {
 }
 ```
 
-#### 1.2 Filtering trips with at least a passenger
+##### 1.2 Filtering trips with at least a passenger
 
 In compliance with regulations, taxi cabs are restricted to carrying a maximum of 5 passengers. To adhere to this rule, I filtered out trips with more than 5 passengers or less than 1 passenger.
 
@@ -242,7 +260,7 @@ def filterTripsWithPassengers(dataframe: DataFrame): DataFrame = {
 }
 ```
 
-#### 1.3 Filtering trips in the same date
+##### 1.3 Filtering trips in the same date
 Some trips have a difference in days greater than 1 day, which is inconsistent considering the pickup and drop-off times as well as the trip distances. 
 
 ```
@@ -272,28 +290,30 @@ def removeTripsInDifferentDays(dataFrame: DataFrame): DataFrame = {
 }
 ```
 
+## Feature Data Engineering
 
-## 2. Set default values
-In certain columns, null values exist for numerical data. For instance, to address null values in the `payment_type` column, I will assign the default value "unknown" instead.
+During the data engineering process, I enhance the dataset by extracting new columns based on the existing data. The following are the features applied to the dataset:
 
-To handle this, the following function is implemented to replace null values with default values:
+- Duration Calculation: Using the pickup and dropoff time information, I calculate the duration of each trip. This duration is added as a new column to provide insights into the time taken for each ride.
 
-```scala
-/**  
-* Cleans the given DataFrame by setting null values to its default value  
-*  
-* @param dataframe The DataFrame containing trip data.  
-* @return A new DataFrame with null values replaced by its default value  
-*/  
-def replaceNullsWithDefaults(dataframe: DataFrame): DataFrame = {  
-	val replacedValuesDf = dataframe.na.fill(Map(  
-		"congestion_surcharge" -> 0.0,  
-		"airport_fee" -> 0.0,  
-		"payment_type" -> PaymentTypes.UNKNOWN  
-	))  
+- Weekend Identification: Using the Pickup DateTime, I apply the `dayofweek` function to determine whether a particular trip occurred on a weekend or not. This information is captured in a new column called `is_weekend`.
 
-	replacedValuesDf  
-}
-```
+- DateTime Splitting: The Pickup DateTime is further processed by splitting it into separate columns for month, year, day, and hour. This facilitate time-based comparisons.
 
 ## Exploratory Data Analysis (EDA)
+
+## Trips average by hour
+
+### Weekends
+![Fig. Average trips by hour ](img/average_trips_by_hour_weekends.png)
+
+### Weekdays
+![Fig. Average trips by hour ](img/average_trips_by_hour_weekdays.png)
+
+## Average trips by borough and month
+
+![Fig. Average trips by borough and month](img/average_trips_by_borough_month.png)
+
+## Average trips by year 
+
+![Fig. Average trips by year](img/average_trips_by_year.png)

@@ -5,7 +5,7 @@ import org.apache.spark.sql.functions._
 import utils.DateUtils
 import utils.DateUtils.getDiffBetweenDates
 
-object DataProcessorTransf {
+object DataPreProcessingTransf {
   /**
    * Adds a column to the DataFrame representing the duration of each trip.
    *
@@ -46,7 +46,8 @@ object DataProcessorTransf {
     val dfWithDatesColumns = dataFrame.withColumns(Map(
       "month" -> month(pickupDateColumn),
       "day"   -> dayofmonth(pickupDateColumn),
-      "year"  -> year(pickupDateColumn)
+      "year"  -> year(pickupDateColumn),
+      "hour"  -> hour(pickupDateColumn)
     ))
 
     dfWithDatesColumns

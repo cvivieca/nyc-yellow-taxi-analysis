@@ -29,9 +29,21 @@ object SchemaDefinitions {
     tripDataSchema
   }
 
+  def GetTLCCleanedDataSchema(): StructType = {
+    val originalSchema = GetTLCSchema()
+
+    originalSchema
+      .add(StructField("trip_duration_in_minutes", DoubleType, nullable = true))
+      .add(StructField("month", ByteType, nullable = true))
+      .add(StructField("day", ShortType, nullable = true))
+      .add(StructField("year", IntegerType, nullable = true))
+      .add(StructField("hour", ByteType, nullable = true))
+      .add(StructField("is_weekend", BooleanType, nullable = true))
+  }
+
   def GetTaxiZoneSchema(): StructType = {
     val taxiZoneSchema = StructType(Array(
-      StructField("LocationID", ByteType, nullable = false),
+      StructField("LocationID", ShortType, nullable = false),
       StructField("Borough", StringType, nullable = false),
       StructField("Zone", StringType, nullable = false),
       StructField("service_zone", StringType, nullable = false)
